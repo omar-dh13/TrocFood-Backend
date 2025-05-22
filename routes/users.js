@@ -14,12 +14,12 @@ router.post("/signup", (req, res) => {
   }
 
   // vérification du format de l'email
-  const patternMail =
-    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  if (!patternMail.test(req.body.email)) {
-    res.json({ result: false, error: "Invalid email format" });
-    return;
-  }
+  // const patternMail =
+  //   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  // if (!patternMail.test(req.body.email)) {
+  //   res.json({ result: false, error: "Invalid email format" });
+  //   return;
+  // }
 
   // Check if the user has not already been registered
   User.findOne({ email: req.body.email }).then((data) => {
@@ -72,7 +72,7 @@ router.post("/profile", (req, res) => {
     lastName,
     phone,
     /*birthday,
-    street,*/
+    address,*/
     token,
   } = req.body;
 
@@ -84,7 +84,7 @@ router.post("/profile", (req, res) => {
       "firstName",
       "lastName",
       "phone",
-      /*"street",
+      /*"address",
       "birthday",*/
     ])
   ) {
