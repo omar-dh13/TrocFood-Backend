@@ -111,7 +111,7 @@ router.get("/near", async (req, res) => {
   if (!lng || !lat) {
     return res.status(400).json({
       result: false,
-      message: "Veuillez fournir lng et lat dans la query string.",
+      message: "Veuillez fournir les informations.",
     });
   }
 
