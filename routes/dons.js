@@ -40,14 +40,34 @@ router.post("/", upload.single('image'), async (req, res) => {
     });
   }
 
-  // Validation du format GeoJSON pour location
+  // *On parse la chaîne de caractères en objet JSON
+  let parsedLocation = location;
+  if (typeof location === "string") {
+    try {
+      parsedLocation = JSON.parse(location);
+      // Force la conversion en nombre pour chaque coordonnée
+      if (
+        parsedLocation.coordinates &&
+        Array.isArray(parsedLocation.coordinates)
+      ) {
+        parsedLocation.coordinates = parsedLocation.coordinates.map(Number);
+      }
+    } catch (e) {
+      return res.status(400).json({
+        result: false,
+        message: "Le champ location doit être un objet GeoJSON valide.",
+      });
+    }
+  }
+
+  // *Validation du format GeoJSON pour location
   if (
-    !location.type ||
-    location.type !== "Point" ||
-    !Array.isArray(location.coordinates) ||
-    location.coordinates.length !== 2 ||
-    typeof location.coordinates[0] !== "number" ||
-    typeof location.coordinates[1] !== "number"
+    !parsedLocation.type ||
+    parsedLocation.type !== "Point" ||
+    !Array.isArray(parsedLocation.coordinates) ||
+    parsedLocation.coordinates.length !== 2 ||
+    typeof parsedLocation.coordinates[0] !== "number" ||
+    typeof parsedLocation.coordinates[1] !== "number"
   ) {
     return res.status(400).json({
       result: false,
@@ -62,7 +82,7 @@ router.post("/", upload.single('image'), async (req, res) => {
     title,
     description,
     image: imageUrl,
-    location,
+    location: parsedLocation,
     user,
   });
 
