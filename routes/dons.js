@@ -2,6 +2,18 @@ const express = require("express");
 const router = express.Router();
 const Don = require("../models/dons");
 const cloudinary = require('../config/cloudinary');
+const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'trocfood_dons',
+    allowed_formats: ['jpg', 'jpeg', 'png'],
+  },
+});
+const upload = multer({ storage: storage });
+
 
 // GET - Récupérer toutes les annonces (dons)
 router.get("/", async (_req, res) => {
@@ -17,8 +29,8 @@ router.get("/", async (_req, res) => {
 });
 
 // POST - Ajouter une annonce (don)
-router.post("/", async (req, res) => {
-  const { title, description, image, location, user } = req.body;
+router.post("/", upload.single('image'), async (req, res) => {
+  const { title, description, location, user } = req.body;
 
   // Validation des champs obligatoires
   if (!title || !description || !location || !user) {
@@ -43,10 +55,13 @@ router.post("/", async (req, res) => {
     });
   }
 
+  // L'URL de l'image uploadée sur Cloudinary
+  const imageUrl = req.file ? req.file.path : null;
+
   const newDon = new Don({
     title,
     description,
-    image,
+    image: imageUrl,
     location,
     user,
   });
