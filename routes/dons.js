@@ -3,7 +3,6 @@ const router = express.Router();
 const Don = require("../models/dons");
 const cloudinary = require('../config/cloudinary');
 
-
 // GET - Récupérer toutes les annonces (dons)
 router.get("/", async (_req, res) => {
   try {
@@ -17,15 +16,30 @@ router.get("/", async (_req, res) => {
   }
 });
 
-
 // POST - Ajouter une annonce (don)
 router.post("/", async (req, res) => {
   const { title, description, image, location, user } = req.body;
 
+  // Validation des champs obligatoires
   if (!title || !description || !location || !user) {
     return res.status(400).json({
       result: false,
       message: "Tous les champs obligatoires doivent être fournis.",
+    });
+  }
+
+  // Validation du format GeoJSON pour location
+  if (
+    !location.type ||
+    location.type !== "Point" ||
+    !Array.isArray(location.coordinates) ||
+    location.coordinates.length !== 2 ||
+    typeof location.coordinates[0] !== "number" ||
+    typeof location.coordinates[1] !== "number"
+  ) {
+    return res.status(400).json({
+      result: false,
+      message: "Le champ location doit être au format GeoJSON : { type: 'Point', coordinates: [longitude, latitude] }",
     });
   }
 
@@ -45,6 +59,40 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET - Récupérer les dons proches d'une position (optionnel)
+router.get("/near", async (req, res) => {
+  //* On récupère la longitude (lng), la latitude (lat) et la distance maximale (maxDistance) depuis la query string de la requête.
+  //* Exemple d'appel : /near?lng=2.35&lat=48.85&maxDistance=5000
+  const { lng, lat, maxDistance = 5000 } = req.query; // *maxDistance en mètres
+
+  // *On vérifie que lng et lat sont bien fournis
+  if (!lng || !lat) {
+    return res.status(400).json({
+      result: false,
+      message: "Veuillez fournir lng et lat dans la query string.",
+    });
+  }
+
+  try {
+    // *On utilise l'opérateur $near de MongoDB pour trouver les dons proches d'un point donné.
+    // *$geometry permet de spécifier le point de référence au format GeoJSON.
+    // *parseFloat(lng) et parseFloat(lat) convertissent les valeurs reçues (qui sont des strings) en nombres à virgule flottante.
+    // *$maxDistance définit la distance maximale (en mètres) autour du point pour la recherche.
+    // *parseInt(maxDistance) convertit la valeur reçue (string) en entier.
+    const dons = await Don.find({
+      location: {
+        $near: {
+          $geometry: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
+          $maxDistance: parseInt(maxDistance),
+        },
+      },
+    }).populate("user", "username");
+
+    res.json({ result: true, dons });
+  } catch (err) {
+    res.status(500).json({ result: false, message: err.message });
+  }
+});
 
 // DELETE - Supprimer un don par ID
 router.delete("/:id", async (req, res) => {
@@ -70,7 +118,6 @@ router.delete("/:id", async (req, res) => {
     });
   }
 });
-
 
 // PUT - Mettre à jour un don par ID 
 router.put("/:id", async (req, res) => {
@@ -102,7 +149,6 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ result: false, message: err.message });
   }
 });
-
 
 // GET - Récupérer un don par ID (pour afficher les détails après un "press" sur une annonce)
 router.get("/:id", async (req, res) => {

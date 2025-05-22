@@ -5,8 +5,10 @@ const addressSchema = mongoose.Schema({
   postalCode: String, //TODO: regarder ce que renvoie expo-location (number ou string ?)
   city: String,
   country: String,
-  latitude: Number,
-  longitude: Number,
+  location: {
+    type: { type: String, default: 'Point' },
+    coordinates: [Number], // [longitude, latitude]
+  },
 });
 
 const donationSchema = mongoose.Schema({
@@ -32,7 +34,9 @@ const userSchema = mongoose.Schema({
   address: addressSchema,
   score: scoreSchema,
 });
-//
+
+userSchema.index({ "address.location": "2dsphere" });
+// * L'index 2dsphere est utilisé dans MongoDB pour les données géospatiales du type "Point" en GeoJSON (comme des coordonnées de latitude et longitude).
 
 const User = mongoose.model("users", userSchema);
 module.exports = User;
