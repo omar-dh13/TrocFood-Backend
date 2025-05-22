@@ -14,7 +14,6 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-
 // GET - Récupérer toutes les annonces (dons)
 router.get("/", async (_req, res) => {
   try {
@@ -24,7 +23,8 @@ router.get("/", async (_req, res) => {
 
     res.json({ result: true, dons });
   } catch (err) {
-    res.status(500).json({ result: false, message: err.message });
+    console.error('Erreur GET /dons:', err);
+    res.status(500).json({ result: false, message: err.message, error: err });
   }
 });
 
@@ -40,7 +40,11 @@ router.post("/", upload.single('image'), async (req, res) => {
     });
   }
 
-  // *On parse la chaîne de caractères en objet JSON
+  // DEBUG : voir ce que reçoit le backend
+  console.log('req.file:', req.file);
+  console.log('req.body:', req.body);
+
+  // On parse la chaîne de caractères en objet JSON
   let parsedLocation = location;
   if (typeof location === "string") {
     try {
@@ -53,14 +57,16 @@ router.post("/", upload.single('image'), async (req, res) => {
         parsedLocation.coordinates = parsedLocation.coordinates.map(Number);
       }
     } catch (e) {
+      console.error('Erreur parsing location:', e);
       return res.status(400).json({
         result: false,
         message: "Le champ location doit être un objet GeoJSON valide.",
+        error: e.message,
       });
     }
   }
 
-  // *Validation du format GeoJSON pour location
+  // Validation du format GeoJSON pour location
   if (
     !parsedLocation.type ||
     parsedLocation.type !== "Point" ||
@@ -76,7 +82,10 @@ router.post("/", upload.single('image'), async (req, res) => {
   }
 
   // L'URL de l'image uploadée sur Cloudinary
-  const imageUrl = req.file ? req.file.path : null;
+  const imageUrl = req.file && req.file.path ? req.file.path : null;
+
+  // DEBUG : voir l'URL Cloudinary
+  console.log('imageUrl:', imageUrl);
 
   const newDon = new Don({
     title,
@@ -90,17 +99,15 @@ router.post("/", upload.single('image'), async (req, res) => {
     const savedDon = await newDon.save();
     res.status(201).json({ result: true, don: savedDon });
   } catch (err) {
-    res.status(500).json({ result: false, message: err.message });
+    console.error('Erreur POST /dons:', err);
+    res.status(500).json({ result: false, message: err.message, error: err });
   }
 });
 
 // GET - Récupérer les dons proches d'une position (optionnel)
 router.get("/near", async (req, res) => {
-  //* On récupère la longitude (lng), la latitude (lat) et la distance maximale (maxDistance) depuis la query string de la requête.
-  //* Exemple d'appel : /near?lng=2.35&lat=48.85&maxDistance=5000
-  const { lng, lat, maxDistance = 5000 } = req.query; // *maxDistance en mètres
+  const { lng, lat, maxDistance = 5000 } = req.query; // maxDistance en mètres
 
-  // *On vérifie que lng et lat sont bien fournis
   if (!lng || !lat) {
     return res.status(400).json({
       result: false,
@@ -109,11 +116,6 @@ router.get("/near", async (req, res) => {
   }
 
   try {
-    // *On utilise l'opérateur $near de MongoDB pour trouver les dons proches d'un point donné.
-    // *$geometry permet de spécifier le point de référence au format GeoJSON.
-    // *parseFloat(lng) et parseFloat(lat) convertissent les valeurs reçues (qui sont des strings) en nombres à virgule flottante.
-    // *$maxDistance définit la distance maximale (en mètres) autour du point pour la recherche.
-    // *parseInt(maxDistance) convertit la valeur reçue (string) en entier.
     const dons = await Don.find({
       location: {
         $near: {
@@ -125,7 +127,8 @@ router.get("/near", async (req, res) => {
 
     res.json({ result: true, dons });
   } catch (err) {
-    res.status(500).json({ result: false, message: err.message });
+    console.error('Erreur GET /dons/near:', err);
+    res.status(500).json({ result: false, message: err.message, error: err });
   }
 });
 
@@ -147,9 +150,11 @@ router.delete("/:id", async (req, res) => {
       don: deletedDon,
     });
   } catch (err) {
+    console.error('Erreur DELETE /dons/:id:', err);
     res.status(500).json({
       result: false,
       message: err.message,
+      error: err,
     });
   }
 });
@@ -181,7 +186,8 @@ router.put("/:id", async (req, res) => {
 
     res.json({ result: true, don: updatedDon });
   } catch (err) {
-    res.status(500).json({ result: false, message: err.message });
+    console.error('Erreur PUT /dons/:id:', err);
+    res.status(500).json({ result: false, message: err.message, error: err });
   }
 });
 
@@ -196,9 +202,9 @@ router.get("/:id", async (req, res) => {
 
     res.json({ result: true, don });
   } catch (err) {
-    res.status(500).json({ result: false, message: err.message });
+    console.error('Erreur GET /dons/:id:', err);
+    res.status(500).json({ result: false, message: err.message, error: err });
   }
 });
-
 
 module.exports = router;
