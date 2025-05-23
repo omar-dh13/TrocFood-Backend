@@ -5,6 +5,8 @@ const User = require("../models/users");
 const { checkBody } = require("../modules/checkBody");
 const uid2 = require("uid2");
 const bcrypt = require("bcrypt");
+const moment = require("moment");
+require("moment/locale/fr");
 
 // route signup
 router.post("/signup", (req, res) => {
@@ -71,7 +73,7 @@ router.post("/profile", (req, res) => {
     firstName,
     lastName,
     phone,
-    // birthday,
+    birthday,
     address,
     token,
   } = req.body;
@@ -85,7 +87,7 @@ router.post("/profile", (req, res) => {
       "lastName",
       "phone",
       "address",
-      //"birthday",
+      "birthday",
     ])
   ) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -115,7 +117,9 @@ router.post("/profile", (req, res) => {
       data.firstName = firstName;
       data.lastName = lastName;
       data.phone = phone;
-      // data.birthday = birthday;
+      data.birthday = /*new Date(birthday) OU*/ new Date(
+        moment.utc(birthday).startOf("day").toISOString()
+      );
       data.address = {
         street: address.properties.name,
         postalCode: address.properties.postcode,
