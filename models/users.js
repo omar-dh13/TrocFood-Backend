@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const addressSchema = mongoose.Schema({
   street: String,
-  postalCode: String, //TODO: regarder ce que renvoie expo-location (number ou string ?)
+  postalCode: String,
   city: String,
   country: String,
   location: {
