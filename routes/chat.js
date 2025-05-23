@@ -1,4 +1,5 @@
 var express = require("express");
+const { token } = require("morgan");
 var router = express.Router();
 
 const Pusher = require("pusher");
@@ -12,28 +13,34 @@ const pusher = new Pusher({
 });
 
 // Join chat
-// création conversation dans la BDD avec les personnes
-router.put("/users/:username", (req, res) => {
+// TODO: création conversation dans la BDD avec les personnes
+router.put("/users/:token", (req, res) => {
   pusher.trigger("chat", "join", {
-    username: req.params.username,
+    token: req.params.token,
   });
 
   res.json({ result: true });
 });
 
 // Leave chat
-router.delete("/users/:username", (req, res) => {
+router.delete("/users/:token", (req, res) => {
   pusher.trigger("chat", "leave", {
-    username: req.params.username,
+    token: req.params.token,
   });
 
   res.json({ result: true });
 });
 
 // Send message
-// enregistrer le message en question dans la BDD
+// TODO: Enregister le message dans la BDD
 router.post("/message", (req, res) => {
-  pusher.trigger("chat", "message", req.body);
+  const { token, message, createdAt, id } = req.body;
+  pusher.trigger("chat", "message", {
+    token,
+    text: message,
+    createdAt,
+    id,
+  });
 
   res.json({ result: true });
 });
