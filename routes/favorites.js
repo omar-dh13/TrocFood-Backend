@@ -15,7 +15,7 @@ router.get('/:userId', async (req, res) => {
 
 // POST - Ajouter un favori
 router.post('/:userId', async (req, res) => {
-  try {
+  try { 
     const { donId } = req.body;
     const user = await User.findById(req.params.userId);
     if (!user) return res.status(404).json({ result: false, message: 'User not found' });
