@@ -34,6 +34,7 @@ router.delete("/users/:token", (req, res) => {
 // Send message
 // TODO: Enregister le message dans la BDD
 router.post("/message", (req, res) => {
+  console.log("Hello");
   const { token, message, createdAt, id } = req.body;
   pusher.trigger("chat", "message", {
     token,
