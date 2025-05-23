@@ -71,8 +71,8 @@ router.post("/profile", (req, res) => {
     firstName,
     lastName,
     phone,
-    /*birthday,
-    address,*/
+    // birthday,
+    address,
     token,
   } = req.body;
 
@@ -84,8 +84,8 @@ router.post("/profile", (req, res) => {
       "firstName",
       "lastName",
       "phone",
-      /*"address",
-      "birthday",*/
+      "address",
+      // "birthday",
     ])
   ) {
     res.json({ result: false, error: "Missing or empty fields" });
@@ -116,16 +116,16 @@ router.post("/profile", (req, res) => {
       data.lastName = lastName;
       data.phone = phone;
       // data.birthday = birthday;
-      // data.adress = {
-      //   street: street[0].properties.name,
-      //   postalCode: street[0].properties.postcode,
-      //   city: street[0].properties.city,
-      //   country: "France", // TODO : checker si on garde en brut ou si on ajoute un input pour le pays
-      //   location: {
-      //     type: street[0].geometry.type,
-      //     coordinates: street[0].geometry.coordinates,
-      //   },
-      // };
+      data.address = {
+        street: address.properties.name,
+        postalCode: address.properties.postcode,
+        city: address.properties.city,
+        country: "France", // TODO : checker si on garde en brut ou si on ajoute un input pour le pays
+        location: {
+          type: address.geometry.type,
+          coordinates: address.geometry.coordinates,
+        },
+      };
 
       data.save().then((newDoc) => res.json({ result: true, user: newDoc }));
 
