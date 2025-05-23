@@ -17,6 +17,7 @@
     "morgan": "~1.9.1",
     "multer": "^2.0.0",
     "multer-storage-cloudinary": "^4.0.0",
+    "pusher": "^5.2.0",
     "uid2": "^1.0.0"
   }
 }
