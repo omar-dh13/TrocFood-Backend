@@ -117,13 +117,13 @@ router.post("/profile", (req, res) => {
       data.phone = phone;
       // data.birthday = birthday;
       data.adress = {
-        street: address[0].properties.name,
-        postalCode: address[0].properties.postcode,
-        city: address[0].properties.city,
+        street: address.properties.name,
+        postalCode: address.properties.postcode,
+        city: address.properties.city,
         country: "France", // TODO : checker si on garde en brut ou si on ajoute un input pour le pays
         location: {
-          type: address[0].geometry.type,
-          coordinates: address[0].geometry.coordinates,
+          type: address.geometry.type,
+          coordinates: address.geometry.coordinates,
         },
       };
 
