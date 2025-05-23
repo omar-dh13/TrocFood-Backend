@@ -7,7 +7,7 @@ const donSchema = new mongoose.Schema({
   location: {
     type: { type: String, default: 'Point' },
     coordinates: [Number], // [longitude, latitude]
-  },
+  }, //* les coordonnées sont au format [longitude, latitude]
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'users' },
   createdAt: { type: Date, default: Date.now },
 });
