@@ -116,7 +116,7 @@ router.post("/profile", (req, res) => {
       data.lastName = lastName;
       data.phone = phone;
       // data.birthday = birthday;
-      data.adress = {
+      data.address = {
         street: address.properties.name,
         postalCode: address.properties.postcode,
         city: address.properties.city,
