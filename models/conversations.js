@@ -1,9 +1,16 @@
 const mongoose = require("mongoose");
 
 const conversationSchema = mongoose.Schema({
-  subject: String, // l'id du don
-  user1: [String], // les id des messages
-  user2: [String], // les id des messages
+  subject: { type: mongoose.Schema.Types.ObjectId, ref: "dons" },
+  users: [{ type: mongoose.Schema.Types.ObjectId, ref: "users" }],
+  messages: [
+    {
+      content: String,
+      from: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+      fromUserName: String,
+      date: Date,
+    },
+  ],
 });
 
 const conversation = mongoose.model("conversations", conversationSchema);
