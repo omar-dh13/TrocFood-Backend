@@ -1,9 +1,11 @@
 var express = require("express");
 const { token } = require("morgan");
 var router = express.Router();
+const mongoose = require("mongoose");
 
 const Pusher = require("pusher");
 const Message = require("../models/messages");
+const Conversation = require("../models/conversations");
 const User = require("../models/users");
 
 const pusher = new Pusher({
@@ -31,49 +33,81 @@ router.get("/usersInfo/:token", (req, res) => {
 
 // Connexion au canal chat
 // TODO: création conversation dans la BDD avec les personnes
-router.put("/users/:token", (req, res) => {
+router.put("/users/:userName", (req, res) => {
   pusher.trigger("chat", "join", {
-    token: req.params.token,
+    user: req.params.userName,
   });
 
   res.json({ result: true });
 });
 
 // Déconnexion du canal chat
-router.delete("/users/:token", (req, res) => {
+router.delete("/users/:userName", (req, res) => {
   pusher.trigger("chat", "leave", {
-    token: req.params.token,
+    user: req.params.userName,
   });
 
   res.json({ result: true });
 });
 
 // Envoi d'un message et sauvegarde dans la BDD
-// TODO: Enregister le message dans la BDD
-router.post("/message", (req, res) => {
-  const { username, message, createdAt, id } = req.body;
-  pusher.trigger("chat", "message", {
-    username,
-    text: message,
-    createdAt,
-    id,
-  });
 
-  const newMessage = new Message({
-    //conversation: id, // TODO: récupérer l'id de la conversation
-    users: [username], // TODO: récupérer les id des users
-    messages: [
-      {
-        content: message,
-        from: username,
-        date: createdAt,
-      },
-    ],
-  });
-  newMessage.save().then((newDoc) => {
-    console.log("Message savec in DB", newDoc);
-  });
-  res.json({ result: true });
+router.post("/message", async (req, res) => {
+  const { username, message, createdAt, id, conversationId } = req.body;
+
+  try {
+    // Trouver l'utilisateur dans la BDD:
+    const user = await User.findOne({ userName: username });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Trouver ou créer la conversation dans la BDD:
+    let conversation;
+    if (conversationId) {
+      conversation = await Conversation.findById(conversationId);
+    } else {
+      conversation = await Conversation.findOne({
+        users: { $all: [user._id] },
+      });
+    }
+
+    if (!conversation) {
+      conversation = new Conversation({
+        users: [user._id],
+        messages: [],
+      });
+      await conversation.save();
+    }
+
+    // Créer le message :
+    const newMessage = new Message({
+      conversation: conversation._id,
+      user: user._id,
+      username: user.userName,
+      content: message,
+      date: createdAt,
+    });
+    await newMessage.save();
+
+    // Ajouter le message à la conversation:
+    conversation.messages.push(newMessage._id);
+    await conversation.save();
+
+    // Envoyer via pusher
+    pusher.trigger("chat", "message", {
+      conversationId: conversation._id,
+      username,
+      text: message,
+      createdAt,
+      id,
+    });
+
+    res.json({ result: true, messageId: newMessage._id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 module.exports = router;

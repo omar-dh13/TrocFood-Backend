@@ -28,7 +28,7 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/dons", donsRouter);
 app.use("/favorites", favoritesRouter);
-app.use("/logmeal", logmealRouter);
+//app.use("/logmeal", logmealRouter);
 app.use("/chat", chatRouter);
 
 module.exports = app;
