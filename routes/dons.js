@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const Don = require("../models/dons");
 const cloudinary = require('../config/cloudinary');
-const multer = require('multer');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require('multer'); // Middleware Node.js pour le téléversement de fichiers vers Cloudinary
+const { CloudinaryStorage } = require('multer-storage-cloudinary'); // permet de stocker les fichiers directement sur Cloudinary
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,

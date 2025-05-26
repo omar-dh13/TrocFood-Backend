@@ -33,6 +33,7 @@ const userSchema = mongoose.Schema({
   phone: String,
   address: addressSchema,
   score: scoreSchema,
+  favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'dons' }] // * liste des dons favoris 
 });
 
 userSchema.index({ "address.location": "2dsphere" });
