@@ -10,7 +10,7 @@ var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var favoritesRouter = require("./routes/favorites");
 var donsRouter = require("./routes/dons");
-var logmealRouter = require("./routes/logmeal");
+// var logmealRouter = require("./routes/logmeal");
 
 var chatRouter = require("./routes/chat");
 var app = express();
@@ -28,7 +28,7 @@ app.use("/", indexRouter);
 app.use("/users", usersRouter);
 app.use("/dons", donsRouter);
 app.use("/favorites", favoritesRouter);
-app.use("/logmeal", logmealRouter);
+// app.use("/logmeal", logmealRouter);
 app.use("/chat", chatRouter);
 
 module.exports = app;
