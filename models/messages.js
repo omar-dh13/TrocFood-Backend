@@ -1,12 +1,19 @@
 const mongoose = require("mongoose");
 
 const messageSchema = mongoose.Schema({
-  conversation: { type: mongoose.Schema.Types.ObjectId, ref: "conversation" },
-  users: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
+  conversation: { type: mongoose.Schema.Types.ObjectId, ref: "conversations" },
+  users: [
+    {
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+      userName: String,
+    },
+  ],
+
   messages: [
     {
       content: String,
-      from: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
+      from: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
+      fromUserName: String,
       date: Date,
     },
   ],
