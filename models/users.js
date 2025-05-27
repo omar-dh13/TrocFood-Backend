@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const addressSchema = mongoose.Schema({
   street: String,
-  postalCode: String, //TODO: regarder ce que renvoie API adress (number ou string ?)
+  postalCode: String,
   city: String,
   country: String,
   location: {
@@ -33,6 +33,7 @@ const userSchema = mongoose.Schema({
   phone: String,
   address: addressSchema,
   score: scoreSchema,
+  favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'dons' }] // * liste des dons favoris 
 });
 
 userSchema.index({ "address.location": "2dsphere" });
