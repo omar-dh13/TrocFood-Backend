@@ -53,54 +53,45 @@ router.delete("/users/:userName", (req, res) => {
 // Envoi d'un message et sauvegarde dans la BDD
 
 router.post("/message", async (req, res) => {
-  const { username, message, createdAt, id, conversationId } = req.body;
+  const { from, content, date } = req.body;
 
   try {
     // Trouver l'utilisateur dans la BDD:
-    const user = await User.findOne({ userName: username });
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
+    // const user = await User.findOne({ userName: username });
+    // if (!user) {
+    //   return res.status(404).json({ error: "User not found" });
+    // }
 
-    // Trouver ou créer la conversation dans la BDD:
-    let conversation;
-    if (conversationId) {
-      conversation = await Conversation.findById(conversationId);
-    } else {
-      conversation = await Conversation.findOne({
-        users: { $all: [user._id] },
-      });
-    }
-
-    if (!conversation) {
-      conversation = new Conversation({
-        users: [user._id],
-        messages: [],
-      });
-      await conversation.save();
-    }
+    // // gestion de la conversation :
+    // let conversation;
+    // if (conversationId) {
+    //   conversation = await Conversation.findById(conversationId);
+    // } else {
+    //   conversation = new Conversation({
+    //     subject: donId //
+    //     users: [user._id],
+    //     messages: [],
+    //   });
+    //   conversation.save();
+    // }
 
     // Créer le message :
     const newMessage = new Message({
-      conversation: conversation._id,
-      user: user._id,
-      username: user.userName,
-      content: message,
-      date: createdAt,
+      from: from,
+      content: content,
+      date: date,
     });
     await newMessage.save();
 
-    // Ajouter le message à la conversation:
-    conversation.messages.push(newMessage._id);
-    await conversation.save();
+    // // Ajouter le message à la conversation:
+    // conversation.messages.push(newMessage._id);
+    // await conversation.save();
 
     // Envoyer via pusher
     pusher.trigger("chat", "message", {
-      conversationId: conversation._id,
-      username,
-      text: message,
-      createdAt,
-      id,
+      from: from,
+      content: content,
+      date: date,
     });
 
     res.json({ result: true, messageId: newMessage._id });
