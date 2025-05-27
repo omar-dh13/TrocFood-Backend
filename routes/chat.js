@@ -78,32 +78,23 @@ router.get("/conversations/:token", authenticateUser, async (req, res) => {
  * Envoie un nouveau message dans une conversation
  * Crée automatiquement la conversation si elle n'existe pas
  */
-router.post("/message", async (req, res) => {
-  // Extraction des données de la requête
+router.post("/message", authenticateUser, async (req, res) => {
   const { to, content } = req.body;
-  const token = req.headers.authorization?.split(' ')[1];
 
   // Vérification des champs obligatoires
-  if (!token || !to || !content) {
+  if (!to || !content) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   try {
-    // Authentification de l'utilisateur expéditeur
-    const user = await User.findOne({ token });
-    if (!user) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
-    // Recherche de la conversation existante entre les deux utilisateurs
+    // Pas besoin de re-authentifier, req.user existe déjà
     let conversation = await Conversation.findOne({
-      participants: { $all: [user._id, to] }
+      participants: { $all: [req.user._id, to] }
     });
 
-    // Si aucune conversation n'existe, en créer une nouvelle
     if (!conversation) {
       conversation = new Conversation({
-        participants: [user._id, to],
+        participants: [req.user._id, to],
         messages: []
       });
       await conversation.save();
@@ -112,7 +103,7 @@ router.post("/message", async (req, res) => {
 
     // Création du nouveau message
     const newMessage = new Message({
-      from: user._id,           // Expéditeur
+      from: req.user._id,           // Expéditeur
       to: to,                   // Destinataire
       content: content.trim(),  // Contenu du message (sans espaces)
       date: new Date(),         // Date d'envoi
@@ -135,8 +126,8 @@ router.post("/message", async (req, res) => {
     pusher.trigger(channelName, "message", {
       _id: newMessage._id,
       from: {
-        _id: user._id,
-        userName: user.userName
+        _id: req.user._id,
+        userName: req.user.userName
       },
       content: newMessage.content,
       date: newMessage.date,
@@ -161,30 +152,15 @@ router.post("/message", async (req, res) => {
  * Rejoindre ou créer une conversation avec un autre utilisateur
  * Retourne l'ID de la conversation et le nom du canal Pusher
  */
-router.post("/join/:otherUserId", async (req, res) => {
-  const { otherUserId } = req.params;
-  const token = req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ error: "Token required" });
-  }
-
+router.post("/join/:otherUserId", authenticateUser, async (req, res) => {
   try {
-    // Authentification de l'utilisateur
-    const user = await User.findOne({ token });
-    if (!user) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
-
-    // Recherche de la conversation existante
     let conversation = await Conversation.findOne({
-      participants: { $all: [user._id, otherUserId] }
+      participants: { $all: [req.user._id, req.params.otherUserId] }
     });
 
-    // Si aucune conversation n'existe, en créer une nouvelle
     if (!conversation) {
       conversation = new Conversation({
-        participants: [user._id, otherUserId],
+        participants: [req.user._id, req.params.otherUserId],
         messages: []
       });
       await conversation.save();
