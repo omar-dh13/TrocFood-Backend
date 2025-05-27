@@ -140,4 +140,33 @@ router.post("/profile", (req, res) => {
   });
 });
 
+// Mettre à jour le statut en ligne de l'utilisateur (pour le chat)
+router.put("/status", async (req, res) => {
+  const { token, isOnline } = req.body;
+
+  if (!token) {
+    return res.status(401).json({ error: "Token required" });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { token },
+      {
+        isOnline: isOnline,
+        lastSeen: isOnline ? null : new Date(),
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    res.json({ result: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 module.exports = router;
