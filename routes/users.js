@@ -140,4 +140,22 @@ router.post("/profile", (req, res) => {
   });
 });
 
+//! DELETE pour supprimer le compte utilisateur
+router.delete("/profile", (req, res) => {
+  const token = req.headers.token;
+
+  if (!token) {
+    res.status(401).json({ result: false, error: "Missing token" });
+    return;
+  }
+
+  User.findOneAndDelete({ token: token }).then((data) => {
+    if (data) {
+      res.status(200).json({ result: true });
+    } else {
+      res.status(400).json({ result: false, error: "User not found" });
+    }
+  });
+});
+
 module.exports = router;
