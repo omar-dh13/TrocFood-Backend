@@ -47,16 +47,19 @@ router.post("/signup", (req, res) => {
 // route signin
 router.post("/signin", (req, res) => {
   if (!checkBody(req.body, ["email", "password"])) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
+    return res
+      .status(400)
+      .json({ result: false, error: "Missing or empty fields" });
   }
 
   User.findOne({ email: req.body.email }).then((data) => {
-    if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, token: data.token });
-    } else {
-      res.json({ result: false, error: "User not found or wrong password" });
+    if (!data) {
+      return res.status(404).json({ result: false, error: "User not found" });
     }
+    if (!bcrypt.compareSync(req.body.password, data.password)) {
+      return res.status(401).json({ result: false, error: "wrong password" });
+    }
+    res.status(200).json({ result: true, token: data.token });
   });
 });
 
