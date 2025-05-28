@@ -8,7 +8,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary'); // permet de
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'trocfood_dons',
+    folder: 'trocfood_dons', // Dossier sur Cloudinary
     allowed_formats: ['jpg', 'jpeg', 'png'],
   },
 });
