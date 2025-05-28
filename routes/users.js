@@ -11,17 +11,17 @@ require("moment/locale/fr");
 // route signup
 router.post("/signup", (req, res) => {
   if (!checkBody(req.body, ["email", "password"])) {
-    res.json({ result: false, error: "Missing or empty fields" });
+    res.status(400).json({ result: false, error: "Missing or empty fields" });
     return;
   }
 
-  // vérification du format de l'email
-  // const patternMail =
-  //   /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-  // if (!patternMail.test(req.body.email)) {
-  //   res.json({ result: false, error: "Invalid email format" });
-  //   return;
-  // }
+  //vérification du format de l'email
+  const patternMail =
+    /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  if (!patternMail.test(req.body.email)) {
+    res.status(400).json({ result: false, error: "Invalid email format" });
+    return;
+  }
 
   // Check if the user has not already been registered
   User.findOne({ email: req.body.email }).then((data) => {
@@ -35,11 +35,11 @@ router.post("/signup", (req, res) => {
       });
 
       newUser.save().then((newDoc) => {
-        res.json({ result: true, token: newDoc.token });
+        res.status(200).json({ result: true, token: newDoc.token });
       });
     } else {
       // User already exists in database
-      res.json({ result: false, error: "User already exists" });
+      res.status(401).json({ result: false, error: "User already exists" });
     }
   });
 });
