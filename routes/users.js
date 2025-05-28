@@ -157,9 +157,10 @@ router.get("/profile", (req, res) => {
   });
 });
 
-// PUT pour update des infos user et modif mdp
+//! PUT pour update des infos user et modif mdp
 router.put("/profile", (req, res) => {
-  const { email, userName, firstName, lastName, phone, token, password, newPassword } = req.body;
+  const { email, userName, firstName, lastName, phone, token, address, password, newPassword } = req.body;
+  console.log(req.body)
 
   //vérification des champs
   if (
@@ -169,9 +170,11 @@ router.put("/profile", (req, res) => {
       "firstName",
       "lastName",
       "phone",
+      "token",
+      "address"
     ])
   ) {
-    res.json({ result: false, error: "Tu as dû oublier de remplir un champ (de maïs)" });
+    res.status(400).json({ result: false, error: "Tu as dû oublier de remplir un champ (de maïs)" });
     return;
   }
 
@@ -179,14 +182,14 @@ router.put("/profile", (req, res) => {
   const patternMail =
     /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   if (!patternMail.test(email)) {
-    res.json({ result: false, error: "A ma connaissance ça ne ressemble pas à un email valide" });
+    res.status(400).json({ result: false, error: "A ma connaissance ça ne ressemble pas à un email valide" });
     return;
   }
 
   //vérification du format du téléphone
   const patternTel = /(0|(\\+33)|(0033))[1-9][0-9]{8}/;
   if (!patternTel.test(phone)) {
-    res.json({ result: false, error: "Tu as mal saisis ton numéro de téléphone" });
+    res.status(400).json({ result: false, error: "Tu as mal saisis ton numéro de téléphone" });
     return;
   }
 
@@ -198,19 +201,29 @@ router.put("/profile", (req, res) => {
       data.firstName = firstName;
       data.lastName = lastName;
       data.phone = phone;
+      data.address = {
+        street: address.properties.name,
+        postalCode: address.properties.postcode,
+        city: address.properties.city,
+        country: "France", 
+        location: {
+          type: address.geometry.type,
+          coordinates: address.geometry.coordinates,
+        },
+      };
 
-      data.save().then((newDoc) => res.json({ result: true, user: newDoc }));
+      data.save().then((newDoc) => res.status(200).json({ result: true, user: newDoc }));
 
       // réponse si token non trouvé
     } else {
-      res.json({ result: false, error: "Utilisateur non trouvé, essaye encore!" });
+      res.status(404).json({ result: false, error: "Utilisateur non trouvé, essaye encore!" });
     }
   });
 //en cas de modification du mot de passe:
-  if(newPassword.result) {
-    !checkBody(req.body, ["password", "newPassword"]) 
-      res.json({ result: false, error: "T'es con ou quoi? tu as oublié de remplir un champ (de blé)" });
-      return(
+  if(newPassword) {
+    if(!checkBody(req.body, ["password", "newPassword"])) 
+      {res.status(400).json({ result: false, error: "T'es con ou quoi? tu as oublié de remplir un champ (de blé)" });
+      return}
     
     // update du mot de passe si token trouvé
     User.findOne({ token: token }).then((data) => {
@@ -220,9 +233,9 @@ router.put("/profile", (req, res) => {
 
         data.save().then(() => res.json({ result: true }));
       } else {
-        res.json({ result: false, error: "Utilisateur non trouvé ou mot de passe erroné, t'es sûr que tu existes?" });
+        res.status(404).json({ result: false, error: "Utilisateur non trouvé ou mot de passe erroné, t'es sûr que tu existes?" });
       }
-    }));
+    });
   }
 });
 
