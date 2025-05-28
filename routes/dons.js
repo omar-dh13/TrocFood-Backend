@@ -8,7 +8,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary'); // permet de
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'trocfood_dons',
+    folder: 'trocfood_dons', // Dossier sur Cloudinary
     allowed_formats: ['jpg', 'jpeg', 'png'],
   },
 });
@@ -17,10 +17,10 @@ const upload = multer({ storage: storage });
 // GET - Récupérer toutes les annonces (dons) avec calcul de distance
 router.get("/", async (req, res) => {
   try {
-    const { latitude, longitude } = req.query; // ⭐ Récupérer lat/lng depuis query params
+    const { latitude, longitude } = req.query; // Récupérer lat/lng depuis query params
     
     const dons = await Don.find()
-      .populate("user", "userName") // ⭐ userName au lieu de username
+      .populate("user", "userName")
       .sort({ createdAt: -1 });
 
     // ⭐ Si position utilisateur fournie, calculer les distances
@@ -45,7 +45,7 @@ router.get("/", async (req, res) => {
       return res.json({ result: true, dons: donsWithDistance });
     }
 
-    // ⭐ Si pas de position, retourner sans distances
+    // Si pas de position, retourner sans distances
     res.json({ result: true, dons });
   } catch (err) {
     console.error('Erreur GET /dons:', err);
