@@ -14,13 +14,38 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage: storage });
 
-// GET - Récupérer toutes les annonces (dons)
-router.get("/", async (_req, res) => {
+// GET - Récupérer toutes les annonces (dons) avec calcul de distance
+router.get("/", async (req, res) => {
   try {
+    const { latitude, longitude } = req.query; // ⭐ Récupérer lat/lng depuis query params
+    
     const dons = await Don.find()
-      .populate("user", "username")
+      .populate("user", "userName") // ⭐ userName au lieu de username
       .sort({ createdAt: -1 });
 
+    // ⭐ Si position utilisateur fournie, calculer les distances
+    if (latitude && longitude) {
+      const userLat = parseFloat(latitude);
+      const userLon = parseFloat(longitude);
+      
+      console.log("📍 Position utilisateur:", userLat, userLon);
+      
+      const donsWithDistance = dons.map(don => {
+        if (don.location?.coordinates && don.location.coordinates.length === 2) {
+          const [donLon, donLat] = don.location.coordinates;
+          const distance = calculateDistance(userLat, userLon, donLat, donLon);
+          
+          console.log(`📏 Don "${don.title}" - Distance: ${distance} km`);
+          
+          return { ...don.toObject(), distance };
+        }
+        return { ...don.toObject(), distance: null };
+      });
+      
+      return res.json({ result: true, dons: donsWithDistance });
+    }
+
+    // ⭐ Si pas de position, retourner sans distances
     res.json({ result: true, dons });
   } catch (err) {
     console.error('Erreur GET /dons:', err);
@@ -206,5 +231,21 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ result: false, message: err.message, error: err });
   }
 });
+
+// ⭐ AJOUTER la fonction calculateDistance
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Rayon de la Terre en km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const distance = R * c;
+  
+  // ⭐ Retourner en kilomètres avec 3 décimales pour précision
+  return Math.round(distance * 1000) / 1000;
+}
 
 module.exports = router;
