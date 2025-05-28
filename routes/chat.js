@@ -56,30 +56,3 @@ router.post("/message", (req, res) => {
 });
 
 module.exports = router;
-
-// router.post("/message", async (req, res) => {
-//   const { from, content, date } = req.body;
-
-//   try {
-
-//     // Créer le message :
-//     const newMessage = new Message({
-//       from: from,
-//       content: content,
-//       date: date,
-//     });
-//     await newMessage.save();
-
-//     // Envoyer via pusher
-//     pusher.trigger("chat", "message", {
-//       from: from,
-//       content: content,
-//       date: date,
-//     });
-
-//     res.json({ result: true, messageId: newMessage._id });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Internal server error" });
-//   }
-// });
