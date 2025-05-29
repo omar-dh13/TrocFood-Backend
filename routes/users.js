@@ -90,7 +90,7 @@ router.post("/profile", (req, res) => {
       "birthday",
     ])
   ) {
-    res.json({ result: false, error: "Missing or empty fields" });
+    res.status(400).json({ result: false, error: "Missing or empty fields" });
     return;
   }
 
@@ -98,14 +98,16 @@ router.post("/profile", (req, res) => {
   const patternMail =
     /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   if (!patternMail.test(email)) {
-    res.json({ result: false, error: "Invalid email format" });
+    res.status(401).json({ result: false, error: "Invalid email format" });
     return;
   }
 
   //vérification du format du téléphone
   const patternTel = /(0|(\\+33)|(0033))[1-9][0-9]{8}/;
   if (!patternTel.test(phone)) {
-    res.json({ result: false, error: "Invalid phone number format" });
+    res
+      .status(401)
+      .json({ result: false, error: "Invalid phone number format" });
     return;
   }
 
@@ -135,7 +137,7 @@ router.post("/profile", (req, res) => {
 
       // réponse si token non trouvé
     } else {
-      res.json({ result: false, error: "User not found" });
+      res.status(404).json({ result: false, error: "User not found" });
     }
   });
 });
