@@ -1,14 +1,15 @@
 const express = require("express");
 const router = express.Router();
 const Don = require("../models/dons");
+const User = require("../models/users"); // ← AJOUTER cette ligne
 const cloudinary = require('../config/cloudinary');
-const multer = require('multer'); // Middleware Node.js pour le téléversement de fichiers vers Cloudinary
-const { CloudinaryStorage } = require('multer-storage-cloudinary'); // permet de stocker les fichiers directement sur Cloudinary
+const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
-    folder: 'trocfood_dons', // Dossier sur Cloudinary
+    folder: 'trocfood_dons',
     allowed_formats: ['jpg', 'jpeg', 'png'],
   },
 });
@@ -65,16 +66,39 @@ router.post("/", upload.single('image'), async (req, res) => {
     });
   }
 
-  // DEBUG : voir ce que reçoit le backend
   console.log('req.file:', req.file);
   console.log('req.body:', req.body);
+
+  // ✨ NOUVELLE LOGIQUE - Gérer email automatiquement
+  let userId = user;
+  
+  try {
+    // Si c'est un email, chercher l'utilisateur
+    if (typeof user === 'string' && user.includes('@')) {
+      console.log("🔍 Recherche utilisateur avec email:", user);
+      const userDoc = await User.findOne({ email: user });
+      if (!userDoc) {
+        return res.status(400).json({
+          result: false,
+          message: "Utilisateur non trouvé avec cet email: " + user
+        });
+      }
+      userId = userDoc._id;
+      console.log("✅ ID utilisateur trouvé:", userId);
+    }
+  } catch (userError) {
+    console.error("❌ Erreur recherche utilisateur:", userError);
+    return res.status(500).json({
+      result: false,
+      message: "Erreur lors de la recherche de l'utilisateur"
+    });
+  }
 
   // On parse la chaîne de caractères en objet JSON
   let parsedLocation = location;
   if (typeof location === "string") {
     try {
       parsedLocation = JSON.parse(location);
-      // Force la conversion en nombre pour chaque coordonnée
       if (
         parsedLocation.coordinates &&
         Array.isArray(parsedLocation.coordinates)
@@ -106,22 +130,19 @@ router.post("/", upload.single('image'), async (req, res) => {
     });
   }
 
-  // L'URL de l'image uploadée sur Cloudinary
   const imageUrl = req.file && req.file.path ? req.file.path : null;
-
-  // DEBUG : voir l'URL Cloudinary
-  console.log('imageUrl:', imageUrl);
 
   const newDon = new Don({
     title,
     description,
-    image: imageUrl,
+    image: imageUrl, // ← URL Cloudinary stockée en base
     location: parsedLocation,
-    user,
+    user: userId,
   });
 
   try {
     const savedDon = await newDon.save();
+    console.log("🎉 Don créé avec succès:", savedDon.title);
     res.status(201).json({ result: true, don: savedDon });
   } catch (err) {
     console.error('Erreur POST /dons:', err);
