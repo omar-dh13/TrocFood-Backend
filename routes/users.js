@@ -47,16 +47,19 @@ router.post("/signup", (req, res) => {
 // route signin
 router.post("/signin", (req, res) => {
   if (!checkBody(req.body, ["email", "password"])) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
+    return res
+      .status(400)
+      .json({ result: false, error: "Missing or empty fields" });
   }
 
   User.findOne({ email: req.body.email }).then((data) => {
-    if (data && bcrypt.compareSync(req.body.password, data.password)) {
-      res.json({ result: true, token: data.token });
-    } else {
-      res.json({ result: false, error: "User not found or wrong password" });
+    if (!data) {
+      return res.status(404).json({ result: false, error: "User not found" });
     }
+    if (!bcrypt.compareSync(req.body.password, data.password)) {
+      return res.status(401).json({ result: false, error: "wrong password" });
+    }
+    res.status(200).json({ result: true, token: data.token });
   });
 });
 
@@ -248,5 +251,34 @@ router.put("/profile", (req, res) => {
 
 
 
+
+// Mettre à jour le statut en ligne de l'utilisateur (pour le chat)
+router.put("/status", async (req, res) => {
+  const { token, isOnline } = req.body;
+
+  if (!token) {
+    return res.status(401).json({ error: "Token required" });
+  }
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { token },
+      {
+        isOnline: isOnline,
+        lastSeen: isOnline ? null : new Date(),
+      },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    res.json({ result: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 module.exports = router;
