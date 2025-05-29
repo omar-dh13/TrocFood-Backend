@@ -61,9 +61,9 @@ router.post("/signin", (req, res) => {
 });
 
 /* GET users listing. */
-router.get("/", function (req, res, next) {
-  res.send("respond with a resource");
-});
+// router.get("/", function (req, res, next) {
+//   res.send("respond with a resource");
+// });
 
 // POST pour ajouter les infos utilisateur de CreateProfile
 router.post("/profile", (req, res) => {
@@ -139,18 +139,20 @@ router.post("/profile", (req, res) => {
     }
   });
 });
-// GET pour récupérer les informations d'un utilisateur
-router.get("/profile", (req, res) => {
-  const { token } = req.query;
 
-  if (!token) {
-    res.json({ result: false, error: "Missing or empty fields" });
-    return;
-  }
+//! GET pour récupérer les informations d'un utilisateur
+router.get("/profile/:token", (req, res) => {
+  const { token } = req.params;
+
+  // if (!token) {
+  //   res.json({ result: false, error: "Missing or empty fields" });
+  //   return;
+  // }
 
   User.findOne({ token: token }).then((data) => {
     if (data) {
       res.json({ result: true, user: data });
+      // console.log("User found", data)
     } else {
       res.json({ result: false, error: "User not found" });
     }
@@ -159,7 +161,7 @@ router.get("/profile", (req, res) => {
 
 //! PUT pour update des infos user et modif mdp
 router.put("/profile", (req, res) => {
-  const { email, userName, firstName, lastName, phone, token, address, password, newPassword } = req.body;
+  const { email, userName, firstName, lastName, phone, token, address, password, newPassword, birthday } = req.body;
   console.log(req.body)
 
   //vérification des champs
@@ -171,9 +173,12 @@ router.put("/profile", (req, res) => {
       "lastName",
       "phone",
       "token",
-      "address"
+      "address",
+      "birthday",
+  
     ])
   ) {
+    console.log(req.body)
     res.status(400).json({ result: false, error: "Tu as dû oublier de remplir un champ (de maïs)" });
     return;
   }
@@ -201,6 +206,7 @@ router.put("/profile", (req, res) => {
       data.firstName = firstName;
       data.lastName = lastName;
       data.phone = phone;
+      data.bithday= new Date(birthday);
       data.address = {
         street: address.properties.name,
         postalCode: address.properties.postcode,
@@ -239,30 +245,20 @@ router.put("/profile", (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
-
-
-
 //! DELETE pour supprimer le compte utilisateur
 router.delete("/profile", (req, res) => {
-  const token = req.headers.token;
+  const token = req.body.token;
 
   if (!token) {
-    res.status(401).json({ result: false, error: "Missing token" });
+    res.status(401).json({ result: false, error: "token manquant" });
     return;
   }
 
-  User.findOneAndDelete({ token: token }).then((data) => {
+  User.deleteOne({ token: token }).then((data) => {
     if (data) {
-      res.status(200).json({ result: true });
+      res.status(200).json({ result: true, message: "utilisateur supprimé" });
     } else {
-      res.status(400).json({ result: false, error: "User not found" });
+      res.status(400).json({ result: false, error: "utilisateur inconnu dans bdd" });
     }
   });
 });
