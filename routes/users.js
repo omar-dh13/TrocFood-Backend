@@ -166,8 +166,19 @@ router.get("/profile/:token", (req, res) => {
 
 //! PUT pour update des infos user et modif mdp
 router.put("/profile", (req, res) => {
-  const { email, userName, firstName, lastName, phone, token, address, password, newPassword, birthday } = req.body;
-  console.log(req.body)
+  const {
+    email,
+    userName,
+    firstName,
+    lastName,
+    phone,
+    token,
+    address,
+    password,
+    newPassword,
+    birthday,
+  } = req.body;
+  console.log(req.body);
 
   //vérification des champs
   if (
@@ -180,11 +191,15 @@ router.put("/profile", (req, res) => {
       "token",
       "address",
       "birthday",
-  
     ])
   ) {
-    console.log(req.body)
-    res.status(400).json({ result: false, error: "Tu as dû oublier de remplir un champ (de maïs)" });
+    console.log(req.body);
+    res
+      .status(400)
+      .json({
+        result: false,
+        error: "Tu as dû oublier de remplir un champ (de maïs)",
+      });
     return;
   }
 
@@ -192,14 +207,24 @@ router.put("/profile", (req, res) => {
   const patternMail =
     /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
   if (!patternMail.test(email)) {
-    res.status(400).json({ result: false, error: "A ma connaissance ça ne ressemble pas à un email valide" });
+    res
+      .status(400)
+      .json({
+        result: false,
+        error: "A ma connaissance ça ne ressemble pas à un email valide",
+      });
     return;
   }
 
   //vérification du format du téléphone
   const patternTel = /(0|(\\+33)|(0033))[1-9][0-9]{8}/;
   if (!patternTel.test(phone)) {
-    res.status(400).json({ result: false, error: "Tu as mal saisis ton numéro de téléphone" });
+    res
+      .status(400)
+      .json({
+        result: false,
+        error: "Tu as mal saisis ton numéro de téléphone",
+      });
     return;
   }
 
@@ -211,31 +236,44 @@ router.put("/profile", (req, res) => {
       data.firstName = firstName;
       data.lastName = lastName;
       data.phone = phone;
-      data.bithday= new Date(birthday);
+      data.birthday = new Date(birthday);
       data.address = {
         street: address.properties.name,
         postalCode: address.properties.postcode,
         city: address.properties.city,
-        country: "France", 
+        country: "France",
         location: {
           type: address.geometry.type,
           coordinates: address.geometry.coordinates,
         },
       };
 
-      data.save().then((newDoc) => res.status(200).json({ result: true, user: newDoc }));
+      data
+        .save()
+        .then((newDoc) => res.status(200).json({ result: true, user: newDoc }));
 
       // réponse si token non trouvé
     } else {
-      res.status(404).json({ result: false, error: "Utilisateur non trouvé, essaye encore!" });
+      res
+        .status(404)
+        .json({
+          result: false,
+          error: "Utilisateur non trouvé, essaye encore!",
+        });
     }
   });
-//en cas de modification du mot de passe:
-  if(newPassword) {
-    if(!checkBody(req.body, ["password", "newPassword"])) 
-      {res.status(400).json({ result: false, error: "T'es con ou quoi? tu as oublié de remplir un champ (de blé)" });
-      return}
-    
+  //en cas de modification du mot de passe:
+  if (newPassword) {
+    if (!checkBody(req.body, ["password", "newPassword"])) {
+      res
+        .status(400)
+        .json({
+          result: false,
+          error: "T'es con ou quoi? tu as oublié de remplir un champ (de blé)",
+        });
+      return;
+    }
+
     // update du mot de passe si token trouvé
     User.findOne({ token: token }).then((data) => {
       if (data && bcrypt.compareSync(password, data.password)) {
@@ -244,7 +282,13 @@ router.put("/profile", (req, res) => {
 
         data.save().then(() => res.json({ result: true }));
       } else {
-        res.status(404).json({ result: false, error: "Utilisateur non trouvé ou mot de passe erroné, t'es sûr que tu existes?" });
+        res
+          .status(404)
+          .json({
+            result: false,
+            error:
+              "Utilisateur non trouvé ou mot de passe erroné, t'es sûr que tu existes?",
+          });
       }
     });
   }
@@ -263,7 +307,9 @@ router.delete("/profile", (req, res) => {
     if (data) {
       res.status(200).json({ result: true, message: "utilisateur supprimé" });
     } else {
-      res.status(400).json({ result: false, error: "utilisateur inconnu dans bdd" });
+      res
+        .status(400)
+        .json({ result: false, error: "utilisateur inconnu dans bdd" });
     }
   });
 });
