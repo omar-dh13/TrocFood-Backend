@@ -59,7 +59,7 @@ router.post("/signin", (req, res) => {
     if (!bcrypt.compareSync(req.body.password, data.password)) {
       return res.status(401).json({ result: false, error: "wrong password" });
     }
-    res.status(200).json({ result: true, token: data.token });
+    res.status(200).json({ result: true, token: data.token, username: data.userName, prenom: data.firstName });
   });
 });
 
