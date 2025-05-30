@@ -94,6 +94,7 @@ router.post("/", upload.single('image'), async (req, res) => {
     });
   }
 
+  
   // On parse la chaîne de caractères en objet JSON
   let parsedLocation = location;
   if (typeof location === "string") {
