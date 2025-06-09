@@ -2,24 +2,26 @@ const express = require("express");
 const router = express.Router();
 const Don = require("../models/dons");
 const User = require("../models/users");
-const cloudinary = require('../config/cloudinary');
-const multer = require('multer');
+const cloudinary = require("../config/cloudinary");
+const multer = require("multer");
 
 // 📸 Configuration multer pour les uploads d'images
-const upload = multer({ dest: 'temp/' });
+const upload = multer({ dest: "/tmp" });
 
 // 📍 Fonction utilitaire pour calculer la distance entre deux points GPS
 function calculateDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // Rayon de la Terre en kilomètres
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = 
-    Math.sin(dLat/2) * Math.sin(dLat/2) +
-    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-    Math.sin(dLon/2) * Math.sin(dLon/2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
-  
+
   // Retourne la distance arrondie au mètre près
   return Math.round(distance * 1000) / 1000;
 }
@@ -28,7 +30,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 router.get("/", async (req, res) => {
   try {
     const { latitude, longitude } = req.query;
-    
+
     // 🔍 Récupération de tous les dons, triés par date de création (plus récents en premier)
     const dons = await Don.find()
       .populate("user", "userName") // Récupère le nom de l'utilisateur
@@ -38,30 +40,33 @@ router.get("/", async (req, res) => {
     if (latitude && longitude) {
       const userLat = parseFloat(latitude);
       const userLon = parseFloat(longitude);
-      
-      const donsWithDistance = dons.map(don => {
+
+      const donsWithDistance = dons.map((don) => {
         // ✅ Vérification que les coordonnées existent
-        if (don.location?.coordinates && don.location.coordinates.length === 2) {
+        if (
+          don.location?.coordinates &&
+          don.location.coordinates.length === 2
+        ) {
           const [donLon, donLat] = don.location.coordinates; // Format MongoDB: [longitude, latitude]
           const distance = calculateDistance(userLat, userLon, donLat, donLon);
           return { ...don.toObject(), distance };
         }
         return { ...don.toObject(), distance: null };
       });
-      
+
       return res.json({ result: true, dons: donsWithDistance });
     }
 
     // 📦 Retour des dons sans calcul de distance
     res.json({ result: true, dons });
   } catch (err) {
-    console.error('❌ Erreur GET /dons:', err);
+    console.error("❌ Erreur GET /dons:", err);
     res.status(500).json({ result: false, message: err.message });
   }
 });
 
 // 🆕 POST - Créer une nouvelle annonce avec upload d'image
-router.post("/", upload.single('image'), async (req, res) => {
+router.post("/", upload.single("image"), async (req, res) => {
   const { title, description, location, user } = req.body;
 
   // ✅ Validation des champs obligatoires
@@ -75,12 +80,12 @@ router.post("/", upload.single('image'), async (req, res) => {
   try {
     // 👤 Recherche de l'utilisateur par email si nécessaire
     let userId = user;
-    if (typeof user === 'string' && user.includes('@')) {
+    if (typeof user === "string" && user.includes("@")) {
       const userDoc = await User.findOne({ email: user });
       if (!userDoc) {
         return res.status(400).json({
           result: false,
-          message: "Utilisateur non trouvé avec cet email: " + user
+          message: "Utilisateur non trouvé avec cet email: " + user,
         });
       }
       userId = userDoc._id;
@@ -92,7 +97,10 @@ router.post("/", upload.single('image'), async (req, res) => {
       try {
         parsedLocation = JSON.parse(location);
         // 🔢 Conversion des coordonnées en nombres
-        if (parsedLocation.coordinates && Array.isArray(parsedLocation.coordinates)) {
+        if (
+          parsedLocation.coordinates &&
+          Array.isArray(parsedLocation.coordinates)
+        ) {
           parsedLocation.coordinates = parsedLocation.coordinates.map(Number);
         }
       } catch (e) {
@@ -114,36 +122,36 @@ router.post("/", upload.single('image'), async (req, res) => {
     ) {
       return res.status(400).json({
         result: false,
-        message: "Le champ location doit être au format GeoJSON : { type: 'Point', coordinates: [longitude, latitude] }",
+        message:
+          "Le champ location doit être au format GeoJSON : { type: 'Point', coordinates: [longitude, latitude] }",
       });
     }
 
     // 📸 Upload vers Cloudinary si une image est fournie
     let cloudinaryUrl = null;
     if (req.file) {
-        // 🌩️ Upload du fichier temporaire vers Cloudinary
-        const result = await cloudinary.uploader.upload(req.file.path);
-        cloudinaryUrl = result.secure_url; // URL sécurisée HTTPS
-        console.log('✅ Image uploadée sur Cloudinary:', cloudinaryUrl);
+      // 🌩️ Upload du fichier temporaire vers Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path);
+      cloudinaryUrl = result.secure_url; // URL sécurisée HTTPS
+      console.log("✅ Image uploadée sur Cloudinary:", cloudinaryUrl);
     }
 
     // 💾 Création et sauvegarde du nouveau don en base
     const newDon = new Don({
-        title,
-        description,
-        image: cloudinaryUrl, // URL Cloudinary ou null si pas d'image
-        location: parsedLocation,
-        user: userId,
+      title,
+      description,
+      image: cloudinaryUrl, // URL Cloudinary ou null si pas d'image
+      location: parsedLocation,
+      user: userId,
     });
 
     const savedDon = await newDon.save();
     console.log("🎉 Don créé avec succès:", savedDon.title);
-    
+
     // 📤 Retour du don créé avec code 201 (Created)
     res.status(201).json({ result: true, don: savedDon });
-
   } catch (err) {
-    console.error('❌ Erreur POST /dons:', err);
+    console.error("❌ Erreur POST /dons:", err);
     res.status(500).json({ result: false, message: err.message });
   }
 });
@@ -165,9 +173,9 @@ router.get("/near", async (req, res) => {
     const dons = await Don.find({
       location: {
         $near: {
-          $geometry: { 
-            type: "Point", 
-            coordinates: [parseFloat(lng), parseFloat(lat)] 
+          $geometry: {
+            type: "Point",
+            coordinates: [parseFloat(lng), parseFloat(lat)],
           },
           $maxDistance: parseInt(maxDistance), // Distance max en mètres
         },
@@ -176,7 +184,7 @@ router.get("/near", async (req, res) => {
 
     res.json({ result: true, dons });
   } catch (err) {
-    console.error('❌ Erreur GET /dons/near:', err);
+    console.error("❌ Erreur GET /dons/near:", err);
     res.status(500).json({ result: false, message: err.message });
   }
 });
@@ -189,16 +197,16 @@ router.get("/:id", async (req, res) => {
 
     // ❌ Don non trouvé
     if (!don) {
-      return res.status(404).json({ 
-        result: false, 
-        message: "Don introuvable." 
+      return res.status(404).json({
+        result: false,
+        message: "Don introuvable.",
       });
     }
 
     // ✅ Retour du don trouvé
     res.json({ result: true, don });
   } catch (err) {
-    console.error('❌ Erreur GET /dons/:id:', err);
+    console.error("❌ Erreur GET /dons/:id:", err);
     res.status(500).json({ result: false, message: err.message });
   }
 });
@@ -234,7 +242,7 @@ router.put("/:id", async (req, res) => {
     // ✅ Retour du don mis à jour
     res.json({ result: true, don: updatedDon });
   } catch (err) {
-    console.error('❌ Erreur PUT /dons/:id:', err);
+    console.error("❌ Erreur PUT /dons/:id:", err);
     res.status(500).json({ result: false, message: err.message });
   }
 });
@@ -260,7 +268,7 @@ router.delete("/:id", async (req, res) => {
       don: deletedDon,
     });
   } catch (err) {
-    console.error('❌ Erreur DELETE /dons/:id:', err);
+    console.error("❌ Erreur DELETE /dons/:id:", err);
     res.status(500).json({ result: false, message: err.message });
   }
 });
